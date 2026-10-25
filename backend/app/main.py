@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import date
 from typing import Any
@@ -128,10 +129,20 @@ async def generate_itinerary(trip: TripRequest) -> Itinerary:
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.gemini_model}:generateContent"
     try:
         async with httpx.AsyncClient(timeout=35) as client:
-            response = await client.post(url, headers={"x-goog-api-key": settings.gemini_api_key}, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json"}})
-        response.raise_for_status()
-        raw = response.json()["candidates"][0]["content"]["parts"][0]["text"]
-        return parse_gemini_itinerary(raw)
+            for attempt in range(3):
+                try:
+                    response = await client.post(url, headers={"x-goog-api-key": settings.gemini_api_key}, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json"}})
+                except httpx.RequestError:
+                    if attempt == 2:
+                        raise
+                    await asyncio.sleep(2 ** attempt)
+                    continue
+                if response.status_code == 503 and attempt < 2:
+                    await asyncio.sleep(2 ** attempt)
+                    continue
+                response.raise_for_status()
+                raw = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+                return parse_gemini_itinerary(raw)
     except httpx.HTTPStatusError as exc:
         status = exc.response.status_code
         if status in (401, 403):
