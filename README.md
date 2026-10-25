@@ -36,7 +36,7 @@ Open PowerShell in the project directory.
 4. Install and start the backend in PowerShell window 1:
 
    ```powershell
-   py -m venv backend\.venv
+   python -m venv backend\.venv
    .\backend\.venv\Scripts\Activate.ps1
    python -m pip install -r backend\requirements.txt
    uvicorn app.main:app --app-dir backend --reload
