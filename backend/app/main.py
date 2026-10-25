@@ -113,7 +113,7 @@ async def generate_itinerary(trip: TripRequest) -> Itinerary:
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.gemini_model}:generateContent"
     try:
         async with httpx.AsyncClient(timeout=35) as client:
-            response = await client.post(url, params={"key": settings.gemini_api_key}, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json"}})
+            response = await client.post(url, headers={"x-goog-api-key": settings.gemini_api_key}, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json"}})
         response.raise_for_status()
         raw = response.json()["candidates"][0]["content"]["parts"][0]["text"]
         result = Itinerary.model_validate(json.loads(raw))

@@ -38,7 +38,7 @@ Open PowerShell in the project directory.
    ```powershell
    py -m venv backend\.venv
    .\backend\.venv\Scripts\Activate.ps1
-   py -m pip install -r backend\requirements.txt
+   python -m pip install -r backend\requirements.txt
    uvicorn app.main:app --app-dir backend --reload
    ```
 
@@ -77,8 +77,8 @@ The backend sends trip details to the configured Gemini model. If no key is set 
 Run backend tests from the repository root:
 
 ```powershell
-py -m pip install -r backend\requirements.txt
-py -m pytest backend\tests -q
+backend\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+backend\.venv\Scripts\python.exe -m pytest backend\tests -q
 ```
 
 Run the frontend production build:
