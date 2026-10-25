@@ -97,7 +97,7 @@ def fallback_itinerary(trip: TripRequest) -> Itinerary:
     return Itinerary(
         destination=trip.destination, currency=trip.currency, days=days,
         estimated_total=round(per_day * count, 2),
-        cost_breakdown={"activities": round(per_day * .35, 2), "food": round(per_day * .25, 2), "transport": round(per_day * .15, 2), "accommodation": round(per_day * .25, 2)},
+        cost_breakdown={"activities": round(per_day * count * .35, 2), "food": round(per_day * count * .25, 2), "transport": round(per_day * count * .15, 2), "accommodation": round(per_day * count * .25, 2)},
         source="fallback",
     )
 
