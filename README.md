@@ -72,7 +72,7 @@ The hosting accounts must be authorized in their official dashboards before eith
 | Variable | Used by | Purpose |
 | --- | --- | --- |
 | `GEMINI_API_KEY` | Backend only | Gemini API credential. Never prefix with `VITE_`. |
-| `GEMINI_MODEL` | Backend only | Gemini model name (default `gemini-2.0-flash`). |
+| `GEMINI_MODEL` | Backend only | Gemini model name (default `gemini-3.6-flash`). |
 | `SUPABASE_URL` | Backend | Project URL for REST requests. |
 | `SUPABASE_KEY` | Backend | Supabase publishable/anon key; user access token and RLS enforce ownership. |
 | `FRONTEND_ORIGIN` | Backend | Allowed browser origin, defaults to the Vite dev URL. |
