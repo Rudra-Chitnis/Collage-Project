@@ -23,9 +23,14 @@ class Settings(BaseSettings):
 
 settings = Settings()
 app = FastAPI(title="Personalized Travel Itinerary Planner", version="1.0.0")
+allowed_origins = list(dict.fromkeys([
+    settings.frontend_origin.rstrip("/"),
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]))
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
@@ -68,13 +73,14 @@ class Itinerary(BaseModel):
     estimated_total: float
     cost_breakdown: dict[str, float]
     source: str
+    notice: str | None = None
 
 
 class DayEdit(BaseModel):
     day: Day
 
 
-def fallback_itinerary(trip: TripRequest) -> Itinerary:
+def fallback_itinerary(trip: TripRequest, notice: str = "Gemini generation is unavailable; showing a fallback itinerary.") -> Itinerary:
     count = (trip.end_date - trip.start_date).days + 1
     per_day = round(trip.budget / count, 2)
     days = []
@@ -99,12 +105,13 @@ def fallback_itinerary(trip: TripRequest) -> Itinerary:
         estimated_total=round(per_day * count, 2),
         cost_breakdown={"activities": round(per_day * count * .35, 2), "food": round(per_day * count * .25, 2), "transport": round(per_day * count * .15, 2), "accommodation": round(per_day * count * .25, 2)},
         source="fallback",
+        notice=notice,
     )
 
 
 async def generate_itinerary(trip: TripRequest) -> Itinerary:
     if not settings.gemini_api_key:
-        return fallback_itinerary(trip)
+        return fallback_itinerary(trip, "Gemini is not configured; showing a fallback itinerary.")
     prompt = (
         "Create a practical travel itinerary as JSON only, with keys destination,currency,days,estimated_total,cost_breakdown. "
         "Each day has date,title,activities (array of {time,name,description}),food,transport,accommodation,estimated_cost. "
@@ -119,10 +126,21 @@ async def generate_itinerary(trip: TripRequest) -> Itinerary:
         result = Itinerary.model_validate(json.loads(raw))
         result.source = "gemini"
         return result
-    except (httpx.HTTPError, KeyError, IndexError, ValueError, TypeError):
-        result = fallback_itinerary(trip)
-        result.source = "fallback"
-        return result
+    except httpx.HTTPStatusError as exc:
+        status = exc.response.status_code
+        if status in (401, 403):
+            reason = "Gemini rejected the configured API key or its permissions; showing a fallback itinerary."
+        elif status == 404:
+            reason = "The configured Gemini model was not found; check GEMINI_MODEL. Showing a fallback itinerary."
+        elif status == 429:
+            reason = "Gemini rate limit or quota was reached; showing a fallback itinerary."
+        else:
+            reason = f"Gemini returned HTTP {status}; showing a fallback itinerary."
+        return fallback_itinerary(trip, reason)
+    except httpx.RequestError:
+        return fallback_itinerary(trip, "Gemini could not be reached; showing a fallback itinerary.")
+    except (KeyError, IndexError, ValueError, TypeError):
+        return fallback_itinerary(trip, "Gemini returned an unreadable itinerary; showing a fallback itinerary.")
 
 
 def require_user_token(authorization: str | None = Header(default=None)) -> str:

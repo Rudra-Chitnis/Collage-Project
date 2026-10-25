@@ -49,7 +49,7 @@ Open PowerShell in the project directory.
    npm run dev
    ```
 
-   Open the Vite URL printed in the terminal (normally `http://localhost:5173`). The API health endpoint is `http://localhost:8000/api/health`.
+   Open the Vite URL printed in the terminal (normally `http://localhost:5173`). The API health endpoint is `http://127.0.0.1:8005/api/health`.
 
 If PowerShell blocks venv activation, run the environment's Python directly instead: `backend\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt` and `backend\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --reload`.
 
@@ -64,7 +64,7 @@ If PowerShell blocks venv activation, run the environment's Python directly inst
 | `FRONTEND_ORIGIN` | Backend | Allowed browser origin, defaults to the Vite dev URL. |
 | `VITE_SUPABASE_URL` | Frontend | Supabase project URL for client-side email/password sign-in. |
 | `VITE_SUPABASE_ANON_KEY` | Frontend | Public publishable/anon key. Safe only with the supplied RLS schema enabled. |
-| `VITE_API_URL` | Frontend | FastAPI origin, defaults to `http://localhost:8000`. |
+| `VITE_API_URL` | Frontend | FastAPI origin, defaults to `http://127.0.0.1:8005`. |
 
 Vite variables are public in the built frontend. Only the Supabase publishable/anon key belongs there; never place Gemini or Supabase service-role/secret keys in a `VITE_` variable.
 
@@ -91,7 +91,7 @@ npm run build
 Manual API smoke check after starting the backend:
 
 ```powershell
-Invoke-RestMethod http://localhost:8000/api/health
+Invoke-RestMethod http://127.0.0.1:8005/api/health
 ```
 
 Supabase persistence requires a configured project, the SQL schema and a confirmed signed-in account. Gemini generation requires a valid local API key. Neither external integration is required to use the fallback itinerary flow.

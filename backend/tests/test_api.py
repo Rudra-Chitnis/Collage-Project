@@ -3,7 +3,7 @@ from datetime import date, timedelta
 import pytest
 
 from fastapi import HTTPException
-from backend.app.main import TripRequest, create_itinerary, fallback_itinerary, health, require_user_token
+from backend.app.main import TripRequest, app, create_itinerary, fallback_itinerary, health, require_user_token
 
 
 def sample_trip():
@@ -45,7 +45,14 @@ def test_saved_trips_require_authentication():
     assert exc.value.status_code == 401
 
 
+def test_cors_allows_local_vite_origins():
+    cors = next(middleware for middleware in app.user_middleware if middleware.cls.__name__ == "CORSMiddleware")
+    assert "http://localhost:5173" in cors.kwargs["allow_origins"]
+    assert "http://127.0.0.1:5173" in cors.kwargs["allow_origins"]
+
+
 def test_fallback_budget_estimates():
     result = fallback_itinerary(TripRequest.model_validate(sample_trip()))
     assert result.estimated_total <= 500
     assert result.source == "fallback"
+    assert result.notice
