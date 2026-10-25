@@ -1,9 +1,10 @@
+import json
 from datetime import date, timedelta
 
 import pytest
 
 from fastapi import HTTPException
-from backend.app.main import TripRequest, app, create_itinerary, fallback_itinerary, health, require_user_token
+from backend.app.main import TripRequest, app, create_itinerary, fallback_itinerary, health, parse_gemini_itinerary, require_user_token
 
 
 def sample_trip():
@@ -29,6 +30,16 @@ def test_generate_handler_uses_labeled_fallback_when_unconfigured(monkeypatch):
     assert response.source == "fallback"
     assert len(response.days) == 2
     assert response.days[0].transport
+
+
+def test_gemini_response_gets_server_controlled_source():
+    trip = TripRequest.model_validate(sample_trip())
+    model_payload = fallback_itinerary(trip).model_dump(mode="json", exclude={"source", "notice"})
+
+    result = parse_gemini_itinerary(json.dumps(model_payload))
+
+    assert result.source == "gemini"
+    assert len(result.days) == 2
 
 
 def test_invalid_trip_dates_rejected():

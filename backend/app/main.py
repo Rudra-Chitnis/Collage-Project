@@ -76,6 +76,14 @@ class Itinerary(BaseModel):
     notice: str | None = None
 
 
+def parse_gemini_itinerary(raw: str) -> Itinerary:
+    payload = json.loads(raw)
+    if not isinstance(payload, dict):
+        raise ValueError("Gemini response must be a JSON object")
+    payload["source"] = "gemini"
+    return Itinerary.model_validate(payload)
+
+
 class DayEdit(BaseModel):
     day: Day
 
@@ -123,9 +131,7 @@ async def generate_itinerary(trip: TripRequest) -> Itinerary:
             response = await client.post(url, headers={"x-goog-api-key": settings.gemini_api_key}, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json"}})
         response.raise_for_status()
         raw = response.json()["candidates"][0]["content"]["parts"][0]["text"]
-        result = Itinerary.model_validate(json.loads(raw))
-        result.source = "gemini"
-        return result
+        return parse_gemini_itinerary(raw)
     except httpx.HTTPStatusError as exc:
         status = exc.response.status_code
         if status in (401, 403):
