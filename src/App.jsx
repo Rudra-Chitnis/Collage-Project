@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const API = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005').replace(/\/+$/, '');
+const LOCAL_API = 'http://127.0.0.1:8005';
+const API = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? LOCAL_API : '')).replace(/\/+$/, '');
 const supabase = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
   ? createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
   : null;
@@ -15,6 +16,9 @@ const destinations = [
 ];
 
 async function apiRequest(path, options = {}) {
+  if (!API) {
+    throw new Error('The planner API is not configured for this deployment. Set VITE_API_URL to the deployed FastAPI service URL.');
+  }
   let response;
   try {
     response = await fetch(`${API}${path}`, options);

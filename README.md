@@ -53,6 +53,20 @@ Open PowerShell in the project directory.
 
 If PowerShell blocks venv activation, run the environment's Python directly instead: `backend\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt` and `backend\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --reload`.
 
+## Public demo deployment (Vercel + Render)
+
+The repository includes [`vercel.json`](vercel.json) for the root Vite app and [`render.yaml`](render.yaml) for the FastAPI service in `backend/`. These files prepare the project for deployment; they do not deploy it or configure hosting accounts by themselves. No local `.env` or credential file is needed by either build.
+
+1. **Deploy the backend on Render.** Sign in to Render, choose **New → Blueprint**, connect `Rudra-Chitnis/Collage-Project`, and apply the `render.yaml` blueprint. Keep the `wayfarer-api` service on the Free plan. Enter `GEMINI_API_KEY` (optional; the fallback works without it), `SUPABASE_URL`, `SUPABASE_KEY` (the publishable/anon key, never a service-role key), and a temporary `FRONTEND_ORIGIN` value if prompted. Do not enter the Supabase database password. Wait until the deploy is live, then verify `https://<render-service>.onrender.com/api/health` returns HTTP 200.
+
+2. **Deploy the frontend on Vercel.** Import the same GitHub repository as a Vite project. Set the root directory to `.` and use the `vercel.json` build settings. In the Vercel project's Production environment variables, set `VITE_API_URL` to the Render service origin (for example, `https://wayfarer-api.onrender.com`, without `/api`), and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the existing project's URL and publishable/anon key. Never add Gemini or a Supabase service-role key to a `VITE_` variable. Deploy and copy the resulting production domain.
+
+3. **Finish exact-origin configuration.** In Render, set `FRONTEND_ORIGIN` to the exact Vercel production origin, such as `https://wayfarer.vercel.app` (no trailing slash), then redeploy the backend. The API allows that configured origin and the two explicit localhost development origins; it does not use a wildcard. In the existing Supabase project, open **Authentication → URL Configuration** and set **Site URL** to the exact Vercel production URL. Add that same URL to **Redirect URLs**. Keep the existing saved-trip table and owner-only RLS policies enabled.
+
+4. **Verify the public workflow.** Open the Vercel URL over HTTPS, call the Render `/api/health` endpoint, create an itinerary, and check that its source is Gemini or the labelled fallback. Sign in with a confirmed Supabase account to test save, reload, update, and delete. Confirm day editing and regeneration. A Render Free service can sleep after inactivity, so its first request may take about a minute; do not upgrade to a paid plan for this project. See [Render's free-service limits](https://render.com/docs/free).
+
+The hosting accounts must be authorized in their official dashboards before either service can be created. The actual public URLs are assigned by those platforms during deployment and cannot be known from the repository alone.
+
 ## Configuration reference
 
 | Variable | Used by | Purpose |
